@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+
+<html>
+    <head>
+        <link rel="stylesheet" href="registerstyles.css" type="text/css"/>
+
+        <script type = "text/javascript">
+            var db = openDatabase('Swimmersf', '1.0', 'Test DB', 2 * 1024 * 1024);
+            db.transaction(function (tx) {
+                tx.executeSql('Create table if not exists SwimmingTimes (id int, lastname, \n\
+                firstname, age int not null, gender not null, fiftyback, fiftybreast, fiftyfly, fiftyfree, hundredIM, hundredfree, \n\
+                hundredbreast, hundredback, hundredfly, twoHundredFree, twoHundredIM, twofiveback, twofivebreast, twofivefly,\n\
+                twofivefree, foreign key(id) references swimmerinfo(id) on delete cascade)');
+            }, myTransactionErrorCallback);
+            db.transaction(function (tx) {
+                tx.executeSql('create table if not exists Swimmerinfo (id int unique not null, lastname, firstname, parentemailone, parentemailtwo, active boolean, gender, age int, birthdate date, primary key (id)');
+                });
+            db.transaction(function (tx) {
+                tx.executeSql('SELECT * FROM SWIMMERINFO order by lastname asc', [], function (tx, results) {
+                    var len = results.rows.length, i;
+                    for (i = 0; i < len; i++) {
+                        var table = document.getElementById("Swimmers");
+                        var newRow = table.insertRow(i + 1);
+                        var cellPos = 0;
+                        var x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).lastname;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).firstname;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).parentemailone;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).parentemailtwo;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).gender;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).age;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).birthdate;
+                        cellPos++;
+                        x = newRow.insertCell(cellPos);
+                        x.innerHTML = results.rows.item(i).active;
+                        cellPos++;
+                        alignCell(i);
+                    }
+                }, myTransactionErrorCallback);
+            });
+            function alignCell(i) {
+                var x = document.getElementById("Swimmers").rows[i + 1].cells;
+                var j;
+                for (j = 0; j < 8; j++) {
+                    x[j].align = "center";
+                }
+            }
+            function myTransactionErrorCallback(error)
+                {
+                    alert('Oops.  Error was ' + error.message + ' (Code ' + error.code + ')');
+                }
+        </script>
+
+        <title>YMCA Swimmer Database</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    </head>
+    <body bgcolor = "#000000">
+
+
+    <center>
+        <h4><font face = "verdana">Check out the swimmers' times here <a href="SwimTimes.html"> Swimmers' Times</a></font></h4>
+    </center>
+    <center><table style="width:62%" border = "1" id = "Swimmers" class='myFormat'>
+
+            <tr>
+                <th>Last name</th>
+                <th>First name</th> 
+                <th>Parent One Email</th>
+                <th>Parent Two Email</th>
+                <th>Gender</th>
+                <th>Age</th>
+                <th>Birthdate</th>
+                <th>Active?</th>
+
+            </tr>
+        </table></center>
+
+    <button id="AddNewSwimmer" onclick="myFunction()">Add new swimmer</button>
+    
+    <div id="myDIV" hidden>
+        <form name="NewSwimmer" action="index.html" onsubmit="return validateForm()" method="post">
+            <div class="form-group">First Name: <input type="text" name="fname"></div>
+            <div>Last Name: <input type="text" name="lname"></div>
+            <div>Parent One Email: <input type="text" name="parentone"></div>
+            <div>Parent Two Email: <input type="text" name ="parenttwo"></div>
+            <div>Gender: <input type="radio" name="gender" value = "1" checked>Male <input type="radio" name="gender" value ="2"> Female</div>
+
+            <div>Birthdate: <input type="date" name="birthdate">
+                Active? <input type="checkbox" name="Active">
+                <input type="submit" value="Submit">
+                </form>
+            </div>
+    </div>
+            <script>
+                function myFunction() {
+                    var x = document.getElementById("myDIV");
+                    if (x.style.display === "block") {
+                        x.style.display = "none";
+                    } else {
+                        x.style.display = "block";
+                    }
+                }
+                function myTransactionErrorCallback(error)
+                {
+                    alert('Oops.  Error was ' + error.message + ' (Code ' + error.code + ')');
+                }
+
+                function myTransactionSuccessCallback()
+                {
+                    alert("Swimmer Added");
+                }
+                function insertInto(ID, last, first, parentone, parenttwo, active, date, gendertype) {
+                    var db = openDatabase('Swimmersf', '1.0', 'Test DB', 2 * 1024 * 1024);
+                    if (parentone !== "" && parenttwo === "") {
+                        db.transaction(function (tx) {
+                            tx.executeSql(('INSERT INTO SWIMMERINFO (id, lastname, firstname, parentemailone,active,gender,age,birthdate) VALUES (?,?,?,?,?,?,?,?)'
+                                    ), [ID, last, first, parentone, active, gendertype, getAge(date), date]);
+                            tx.executeSql(('Insert into swimmingtimes (id, lastname, firstname, gender, age) values(?,?,?,?,?)'), [ID, last, first, gendertype, getAge(date)]);
+                        }, myTransactionErrorCallback, myTransactionSuccessCallback);
+                    }
+                    if (parentone === "" && parenttwo !== "") {
+                        db.transaction(function (tx) {
+                            tx.executeSql(('INSERT INTO SWIMMERINFO (id, lastname, firstname, parentemailtwo,active,gender,age,birthdate) VALUES (?,?,?,?,?,?,?,?)'
+                                    ), [ID, last, first, parenttwo, active, gendertype, getAge(date), date]);
+                            tx.executeSql(('Insert into swimmingtimes(id, lastname, firstname, gender, age) values(?,?,?,?,?)'), [ID, last, first, gendertype, getAge(date)]);
+                        }, myTransactionErrorCallback, myTransactionSuccessCallback);
+                    }
+                    if (parentone === "" && parenttwo === "") {
+                        db.transaction(function (tx) {
+                            tx.executeSql(('INSERT INTO SWIMMERINFO (id, lastname, firstname, parentemailone,parentemailtwo,active,gender,age,birthdate) VALUES (?,?,?,?,?,?,?,?,?)'
+                                    ), [ID, last, first, parentone, parenttwo, active, gendertype, getAge(date), date]);
+                            tx.executeSql(('Insert into swimmingtimes (id, lastname, firstname, gender, age) values(?,?,?,?,?)'), [ID, last, first, gendertype, getAge(date)]);
+                        }, myTransactionErrorCallback, myTransactionSuccessCallback);
+                    }
+                }
+                function validateForm() {
+                    var first = document.forms["NewSwimmer"]["fname"].value;
+                    if (first === "") {
+                        alert("First Name must be filled out");
+                        return false;
+                    }
+                    var last = document.forms["NewSwimmer"]["lname"].value;
+                    if (last === "") {
+                        alert("Last Name must be filled out");
+                        return false;
+                    }
+                    var parentone = document.forms["NewSwimmer"]["parentone"].value;
+                    var parenttwo = document.forms["NewSwimmer"]["parenttwo"].value;
+                    if (parentone === "" && parenttwo === "") {
+                        alert("Need an email");
+                        return false;
+                    }
+                    
+                    if (parentone !== "" && !ValidateEmail(parentone)) {
+                        return false;
+                    }
+                    if (parenttwo !== "" && !ValidateEmail(parenttwo))
+                    {
+                        return false;
+                    }
+                    function ValidateEmail(email)
+                    {
+                        if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email))
+                        {
+                            return (true);
+                        }
+                        alert("You have entered an invalid email address");
+                        return (false);
+                    }
+                    var date = document.forms["NewSwimmer"]["birthdate"].value;
+                    var active = document.forms["NewSwimmer"]["Active"].checked;
+                    var gender = document.forms["NewSwimmer"]["gender"].value;
+                    var gendertype;
+                    
+                    function getID() {
+                        var db = openDatabase('Swimmersf', '1.0', 'Test DB', 2 * 1024 * 1024);
+                        db.transaction(function (tx) {
+                            tx.executeSql('select id from swimmerinfo', [], function (tx, results) {
+                                var len = results.rows.length, i;
+                                for (i = 0; i < len; i++) {
+                                    if (i === len - 1 && results.rows.item(i) !== null) {
+                                        return results.rows.item(i).id + 1;
+                                    }
+                                    else
+                                        return 0;
+                                }
+                            });
+                        }, myTransactionErrorCallback);
+                    }
+                    var ID = getID();
+                    if (gender === "2") {
+                        gendertype = "F";
+                    }
+                    if (gender === "1" && gendertype !== "F") {
+                        gendertype = "M";
+                    }
+                    if (date === "") {
+                        alert("Please put down the birthdate");
+                        return false;
+                    }
+                    if (gender === "2" && gendertype === "M") {
+                        gendertype = "F";
+                    }
+                    insertInto(ID + 1, last, first, parentone, parenttwo, active, date, gendertype);
+                    
+                }
+                function getAge(dateString) {
+                    var today = new Date();
+                    var birthDate = new Date(dateString);
+                    var age = today.getFullYear() - birthDate.getFullYear();
+                    var m = today.getMonth() - birthDate.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+                    return age;
+                }
+
+            </script>
+            
+            <button id ="DeleteSwimmer" onclick="myNewFunction()">Delete swimmer</button>
+    <div id="myNewDIV" hidden>
+        <form name="Delete" action ="index.html" onsubmit="return ValidateSwimmer()" method="post">
+            <div class="form-group">First Name: <input type="text" name="fname"></div>
+            <div>Last Name: <input type="text" name="lname"></div>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+            <script>
+                var db = openDatabase('Swimmersf', '1.0', 'Test DB', 2 * 1024 * 1024);
+                function myNewFunction() {
+                    var x = document.getElementById("myNewDIV");
+                    if (x.style.display === "block") {
+                        x.style.display = "none";
+                    } else {
+                        x.style.display = "block";
+                    }
+                }
+                function ValidateSwimmer() {
+                    var db = openDatabase('Swimmersf', '1.0', 'Test DB', 2 * 1024 * 1024);
+                    var first = document.forms["Delete"]["fname"].value;
+                    if (first === "") {
+                        alert("First Name must be filled out");
+                        return false;
+                    }
+                    var last = document.forms["Delete"]["lname"].value;
+                    if (last === "") {
+                        alert("Last Name must be filled out");
+                        return false;
+                    }
+                    if (confirm('Are you sure you want to delete ' + first + ' ' + last + '? Doing so will delete their times too.')) {
+                        
+                        db.transaction(function (tx) {
+                            tx.executeSql(('delete from swimmerinfo where firstname = ? and lastname = ?'), [first, last]);
+                            tx.executeSql(('delete from swimmingtimes where firstname = ? and lastname = ?'), [first, last]);
+                            tx.executeSql(('delete from meettimesprogress where firstname =? and lastname =?'), [first, last]);
+                        }, DeleteSwimmerError, DeleteSwimmerSuccess);
+                        
+                    }
+                }
+                function DeleteSwimmerError(error)
+                {
+                    alert('Swimmer does not match records or error: ' + error.message);
+                }
+                function DeleteSwimmerSuccess()
+                {
+                    alert('Swimmer successfully deleted from records');
+                }
+                </script>
+            </body>
+
+            </html>
+
+
